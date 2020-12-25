@@ -246,7 +246,7 @@ class Alacritty {
   }
 
   changePadding(padding) {
-    if (padding.length != 2) {
+    if (Object.keys(padding).length != 2) {
       log(error("Padding should only have an x and y value"));
     }
     const { x, y } = padding;
@@ -259,8 +259,8 @@ class Alacritty {
       log(warning('"padding" prop was not present in config file'));
     }
 
-    this.config["window"]["padding"]["x"] = x;
-    this.config["window"]["padding"]["y"] = y;
+    this.config["window"]["padding"]["x"] = Number(x);
+    this.config["window"]["padding"]["y"] = Number(y);
     log(chalk.blue(`Padding set to x: ${x}, y: ${y}`));
   }
 }
