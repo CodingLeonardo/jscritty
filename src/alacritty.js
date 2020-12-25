@@ -20,6 +20,7 @@ class Alacritty {
     this.changeOpacity = this.changeOpacity.bind(this);
     this.changeFont = this.changeFont.bind(this);
     this.changePadding = this.changePadding.bind(this);
+    this.changeFontOffset = this.changeFontOffset.bind(this);
     this.init();
   }
 
@@ -108,6 +109,7 @@ class Alacritty {
       size: this.changeFontSize,
       opacity: this.changeOpacity,
       padding: this.changePadding,
+      offset: this.changeFontOffset,
     };
 
     let errorsFound = 0;
@@ -262,6 +264,23 @@ class Alacritty {
     this.config["window"]["padding"]["x"] = Number(x);
     this.config["window"]["padding"]["y"] = Number(y);
     log(chalk.blue(`Padding set to x: ${x}, y: ${y}`));
+  }
+
+  changeFontOffset(offset) {
+    if (Object.keys(offset).length != 2) {
+      log(error("Wrong offset config, should be [x, y]"));
+    }
+    const { x, y } = offset;
+    if (!("font" in this.config)) {
+      this.config["font"] = {};
+    }
+    if (!("offset" in this.config["font"])) {
+      log(warning('"offset" prop was not set'));
+      this.config["font"]["offset"] = {};
+    }
+    this.config["font"]["offset"]["x"] = Number(x);
+    this.config["font"]["offset"]["y"] = Number(y);
+    log(chalk.blue(`Offset set to x: ${x}, y: ${y}`));
   }
 }
 
