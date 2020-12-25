@@ -1,6 +1,10 @@
 const path = require("path");
 const fs = require("fs");
 const yaml = require("yaml");
+const chalk = require("chalk");
+const log = console.log;
+const error = chalk.bold.red;
+const warning = chalk.keyword("orange");
 
 class Alacritty {
   constructor() {
@@ -15,25 +19,26 @@ class Alacritty {
     this.changeFontSize = this.changeFontSize.bind(this);
     this.changeOpacity = this.changeOpacity.bind(this);
     this.changeFont = this.changeFont.bind(this);
+    this.changePadding = this.changePadding.bind(this);
     this.init();
   }
 
   init() {
     this.basePath = path.resolve(process.env.HOME, ".config/alacritty");
     if (!fs.existsSync(this.basePath)) {
-      console.error(`Config directory not found: ${this.base_path}`);
+      log(error(`Config directory not found: ${this.base_path}`));
     }
     this.configFile = `${this.basePath}/alacritty.yml`;
     if (!fs.existsSync(this.configFile)) {
-      console.warn("Config file not found");
+      log(warning("Config file not found"));
       fs.writeFileSync(this.configFile);
-      console.log("Created config file =>");
-      console.log(this.configFile);
+      log("Created config file =>");
+      log(chalk.blue(this.configFile));
     }
     this.config = this.load(this.configFile);
     if (this.config === null) {
       this.config = {};
-      console.warn("Alacritty config file was empty");
+      log(warning("Alacritty config file was empty"));
     }
     this.resources = {
       themes: {
@@ -66,22 +71,22 @@ class Alacritty {
           encoding: "utf8",
         })
       );
-    } catch (error) {
-      console.log("error");
+    } catch (err) {
+      log(error(err));
     }
   }
 
   resourcePath(resource) {
     if (!(resource in this.resources)) {
-      console.log(`Path for resource "${resource}" not set`);
+      log(error(`Path for resource "${resource}" not set`));
     }
 
     resource = this.resources[resource];
     if (!resource["exists"]) {
-      console.warn(`${resource["type"]} not found`);
+      log(warning(`${resource["type"]} not found`));
       resource["create"]();
-      console.log("Created resource =>");
-      console.log(resource["path"]);
+      log("Created resource =>");
+      log(chalk.blue(resource["path"]));
     }
     return resource["path"];
   }
@@ -94,7 +99,7 @@ class Alacritty {
 
   apply(config) {
     if (config === null || config.length < 1) {
-      console.log("No options provided");
+      log(error("No options provided"));
     }
 
     const actions = {
@@ -102,6 +107,7 @@ class Alacritty {
       font: this.changeFont,
       size: this.changeFontSize,
       opacity: this.changeOpacity,
+      padding: this.changePadding,
     };
 
     let errorsFound = 0;
@@ -109,15 +115,15 @@ class Alacritty {
       if (param in config) {
         try {
           actions[param](config[param]);
-        } catch (error) {
-          console.log(error);
+        } catch (err) {
+          log(error(err));
           errorsFound += 1;
         }
       }
     }
 
     if (errorsFound > 0) {
-      console.log(`\n${errorsFound} error(s) found`);
+      log(error(`\n${errorsFound} error(s) found`));
     }
   }
 
@@ -125,14 +131,14 @@ class Alacritty {
     const themesDirectory = this.resourcePath("themes");
     const themeFile = `${themesDirectory}/${theme}.yaml`;
     if (!fs.existsSync(themeFile)) {
-      console.error(`Theme "${theme}" not found`);
+      log(error(`Theme "${theme}" not found`));
     }
     const themeYaml = this.load(themeFile);
     if (themeYaml === null) {
-      console.error(`File ${themeFile.name} is empty`);
+      log(error(`File ${themeFile.name} is empty`));
     }
     if (!themeYaml["colors"]) {
-      console.error(`${themeFile} does not contain color config`);
+      log(error(`${themeFile} does not contain color config`));
     }
 
     const expected_colors = [
@@ -153,63 +159,62 @@ class Alacritty {
 
     for (let k in expected_props) {
       if (!(k in themeYaml["colors"])) {
-        console.warn(`Missing "colors:${k}" for theme "${theme}"`);
+        log(warning(`Missing "colors:${k}" for theme "${theme}"`));
         continue;
       }
       for (let v in expected_props[k]) {
         if (!(v in Object.keys(themeYaml["colors"][k]))) {
-          console.warn(`Missing "colors:${k}:${v}" for theme "${theme}"`);
+          log(warning(`Missing "colors:${k}:${v}" for theme "${theme}"`));
         }
       }
     }
     this.config["colors"] = themeYaml["colors"];
-    console.log(`Theme ${theme} applied`);
+    log(chalk.blue(`Theme ${theme} applied`));
   }
 
   changeFontSize(size) {
-    console.log(this.config);
     if (size <= 0) {
-      console.log("Font size cannot be negative or zero");
+      log(error("Font size cannot be negative or zero"));
     }
 
     if (!("font" in this.config)) {
       this.config["font"] = {};
-      console.log('"font" prop config was not present in alacritty.yml');
+      log(warning('"font" prop config was not present in alacritty.yml'));
       this.config["font"]["size"] = size;
     }
 
     this.config["font"]["size"] = size;
-    console.log(`Font size set to ${size}`);
+    log(chalk.blue(`Font size set to ${size}`));
   }
 
   changeOpacity(opacity) {
     if (opacity < 0.0 || opacity > 1.0) {
-      console.log("Opacity should be between 0.0 and 1.0");
+      log(error("Opacity should be between 0.0 and 1.0"));
     }
 
     this.config["background_opacity"] = opacity;
-    console.log(`Opacity set to ${opacity}`);
+    log(chalk.blue(`Opacity set to ${opacity}`));
   }
 
   changeFont(font) {
     if (!("font" in this.config)) {
       this.config["font"] = {};
-      console.log('"font" prop was not present in alacritty.yml');
+      log(warning('"font" prop was not present in alacritty.yml'));
     }
 
     const fontsFile = this.resourcePath("fonts");
     let fonts = this.load(fontsFile);
     if (fonts === null) {
-      console.log(`File "${fontsFile}" is empty`);
+      log(error(`File "${fontsFile}" is empty`));
     }
     if (!("fonts" in fonts)) {
-      console.log(`No font config found in "${fontsFile}"`);
+      log(error(`No font config found in "${fontsFile}"`));
     }
 
     fonts = fonts["fonts"];
 
     if (!(font in fonts)) {
-      console.log(`Config for font "${font}" not found`);
+      log(error(`Config for font "${font}" not found`));
     }
 
     const fontTypes = ["normal", "bold", "italic"];
@@ -223,19 +228,38 @@ class Alacritty {
     }
 
     if (!(fonts[font] instanceof Object)) {
-      console.log(`Font "${font}" has wrong format`);
+      log(error(`Font "${font}" has wrong format`));
     }
 
     for (let t in fontTypes) {
       if (!(t in Object.keys(fonts))) {
-        console.log(`Font "${font}" does not have "${t}" property`);
+        log(warning(`Font "${font}" does not have "${t}" property`));
       }
       if (!(t in this.config["font"])) {
         this.config["font"][fontTypes[t]] = { family: "tmp" };
       }
       this.config["font"][fontTypes[t]]["family"] = fonts[font][fontTypes[t]];
     }
-    console.log(`Font ${font} applied`);
+    log(chalk.blue(`Font ${font} applied`));
+  }
+
+  changePadding(padding) {
+    if (padding.length != 2) {
+      log(error("Padding should only have an x and y value"));
+    }
+    const { x, y } = padding;
+    if (!("window" in this.config)) {
+      this.config["window"] = {};
+      log(warning('"window" prop was not present in config file'));
+    }
+    if (!("padding" in this.config["window"])) {
+      this.config["window"]["padding"] = {};
+      log(warning('"padding" prop was not present in config file'));
+    }
+
+    this.config["window"]["padding"]["x"] = x;
+    this.config["window"]["padding"]["y"] = y;
+    log(chalk.blue(`Padding set to x: ${x}, y: ${y}`));
   }
 }
 
