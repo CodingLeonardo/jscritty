@@ -173,6 +173,7 @@ class Alacritty {
   }
 
   changeFontSize(size) {
+    size = Number(size);
     if (size <= 0) {
       log(error("Font size cannot be negative or zero"));
     }
@@ -188,6 +189,7 @@ class Alacritty {
   }
 
   changeOpacity(opacity) {
+    opacity = Number(opacity);
     if (opacity < 0.0 || opacity > 1.0) {
       log(error("Opacity should be between 0.0 and 1.0"));
     }
