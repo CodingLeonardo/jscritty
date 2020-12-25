@@ -9,6 +9,7 @@
   "author": "@CodingLeonardo <Leonardo Rivero>",
   "license": "MIT",
   "dependencies": {
-    "minimist": "^1.2.5"
+    "minimist": "^1.2.5",
+    "yaml": "^1.10.0"
   }
 }
