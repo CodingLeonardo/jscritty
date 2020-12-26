@@ -12,11 +12,26 @@ program
   .option(
     "-O, --offset [x] [y]",
     "Change offset, X is space between chars and Y is line height of alacritty"
+  )
+  .option(
+    "-l, --list [fonts, themes, all]",
+    'List all available options from resource, default is "all"'
+  )
+  .option(
+    "-P, --print [config, fonts]",
+    "Print the content of config files or themes by specifying their name of alacritty"
   );
 
-const { theme, font, size, opacity, padding, offset } = program.parse(
-  process.argv
-);
+const {
+  theme,
+  font,
+  size,
+  opacity,
+  padding,
+  offset,
+  list,
+  print,
+} = program.parse(process.argv);
 
 // console.log(program.opts());
 // console.log(program.args);
@@ -34,6 +49,8 @@ const flags = {
     x: offset,
     y: padding ? undefined : program.args[0],
   },
+  list: list,
+  print: print,
 };
 
 if (flags.theme === undefined) {
@@ -53,6 +70,12 @@ if (flags.padding.x === undefined && flags.padding.y === undefined) {
 }
 if (flags.offset.x === undefined && flags.offset.y === undefined) {
   delete flags.offset;
+}
+if (flags.list === undefined) {
+  delete flags.list;
+}
+if (flags.print === undefined) {
+  delete flags.print;
 }
 
 console.log(flags);

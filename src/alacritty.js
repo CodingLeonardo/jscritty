@@ -21,6 +21,13 @@ class Alacritty {
     this.changeFont = this.changeFont.bind(this);
     this.changePadding = this.changePadding.bind(this);
     this.changeFontOffset = this.changeFontOffset.bind(this);
+    this.list = this.list.bind(this);
+    this.listFonts = this.listFonts.bind(this);
+    this.listThemes = this.listThemes.bind(this);
+    this.print = this.print.bind(this);
+    this.printConfig = this.printConfig.bind(this);
+    this.printFonts = this.printFonts.bind(this);
+    this.printTheme = this.printTheme.bind(this);
     this.init();
   }
 
@@ -110,6 +117,8 @@ class Alacritty {
       opacity: this.changeOpacity,
       padding: this.changePadding,
       offset: this.changeFontOffset,
+      list: this.list,
+      print: this.print,
     };
 
     let errorsFound = 0;
@@ -282,6 +291,100 @@ class Alacritty {
     this.config["font"]["offset"]["y"] = Number(y);
     log(chalk.blue(`Offset set to x: ${x}, y: ${y}`));
   }
-}
 
+  list(toBeListed) {
+    const options = {
+      themes: this.listThemes,
+      fonts: this.listFonts,
+    };
+
+    if (toBeListed == "all") {
+      for (let listFunction in options) {
+        options[listFunction]();
+      }
+    } else {
+      if (!(toBeListed in options)) {
+        log(error(`Cannot list ${toBeListed}, unknown option`));
+      }
+      options[toBeListed]();
+    }
+  }
+
+  listFonts() {
+    const fonts = this.load(this.resourcePath("fonts"));
+    if (fonts === null || !("fonts" in fonts)) {
+      log(warning("Cannot list fonts, no fonts found"));
+    } else {
+      log(chalk.blue.bold.underline("Fonts:"));
+      for (let font in fonts["fonts"]) {
+        log(chalk.blue(`${font}`));
+      }
+    }
+  }
+
+  listThemes() {
+    const themesDir = this.resourcePath("themes");
+    fs.readdir(themesDir, (err, files) => {
+      if (err) {
+        log(error(err));
+      } else {
+        const themes = [];
+
+        files.forEach((file) => {
+          themes.push(file);
+        });
+
+        if (themes.length < 1) {
+          log(warning("Cannot list themes, themes directory is empty"));
+        } else {
+          log(chalk.green.bold.underline("Themes"));
+          for (let theme in themes) {
+            log(chalk.green(`${themes[theme]}`));
+          }
+        }
+      }
+    });
+  }
+
+  printConfig() {
+    log(chalk.blue(this.configFile));
+    log(yaml.stringify(this.config));
+  }
+
+  printFonts() {
+    const fontsFile = this.resourcePath("fonts");
+    log(chalk.blue(fontsFile));
+    log(chalk.green(yaml.stringify(this.load(fontsFile))));
+  }
+
+  printTheme(theme) {
+    const themesDir = this.resourcePath("themes");
+    const themeFile = `${themesDir}/${theme}.yaml`;
+
+    if (!fs.existsSync(themeFile)) {
+      log(error(`Failed printing "${theme}" theme, "${theme_file}" not found`));
+    }
+    log(chalk.blue(themeFile));
+    log(yaml.stringify(this.load(themeFile)));
+  }
+
+  print(toBePrinted) {
+    const options = {
+      fonts: this.printFonts,
+      config: this.printConfig,
+    };
+
+    if (toBePrinted.length == 0) {
+      toBePrinted.append("config");
+    }
+
+    for (let param in toBePrinted) {
+      if (param in options) {
+        this.printTheme(param);
+      } else {
+        options[toBePrinted]();
+      }
+    }
+  }
+}
 module.exports = Alacritty;
