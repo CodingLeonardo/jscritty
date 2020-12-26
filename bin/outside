@@ -1,2 +1,10 @@
 #!/usr/bin/env node
-require('../')()
+let path;
+
+if (`${process.env.HOME}/Code/jscritty/./bin/outside` == process.env._) {
+  path = process.env._;
+} else {
+  path = `${process.env.HOME}/.config/alacritty/jscritty/index.js`;
+}
+
+require(path)();

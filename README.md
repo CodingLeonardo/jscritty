@@ -14,7 +14,7 @@ cp jscritty/config/fonts.yaml fonts.yaml
 cp -r jscritty/config/themes themes
 # Create executable
 mkdir -p ~/.local/bin
-ln -s ~/.config/alacritty/jscritty/index.js ~/.local/bin/jscritty
+ln -s ~/.config/alacritty/jscritty/bin/outside ~/.local/bin/jscritty
 chmod 755 jscritty/index.js
 # Add ~/.local/bin to $PATH
 echo 'export PATH=$PATH:~/.local/bin' >> ~/.bash_profile
