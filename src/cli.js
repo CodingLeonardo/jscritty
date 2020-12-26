@@ -1,26 +1,29 @@
 const { Command } = require("commander");
 const program = new Command();
-program.version("0.0.1");
 
-program
-  .name("JSCritty")
-  .option("-t, --theme [theme]", "Change the theme of alacritty")
-  .option("-f, --font [font]", "Change the font of alacritty")
-  .option("-s, --size [size]", "Change the font size of alacritty")
-  .option("-o, --opacity [opacity]", "Change the opacity of alacritty")
-  .option("-p, --padding [x] [y]", "Change the padding of alacritty")
-  .option(
-    "-O, --offset [x] [y]",
-    "Change offset, X is space between chars and Y is line height of alacritty"
-  )
-  .option(
-    "-l, --list [fonts, themes, all]",
-    'List all available options from resource, default is "all"'
-  )
-  .option(
-    "-P, --print [config, fonts]",
-    "Print the content of config files or themes by specifying their name of alacritty"
-  );
+program.version("0.0.1");
+program.name("JSCritty");
+program.description(
+  "CLI that allows you to change your Alacritty config with one command without editting the config file."
+);
+
+program.option("-t, --theme <theme>", "Change the theme of alacritty");
+program.option("-f, --font <font>", "Change the font of alacritty");
+program.option("-s, --size <size>", "Change the font size of alacritty");
+program.option("-o, --opacity <opacity>", "Change the opacity of alacritty");
+program.option("-p, --padding <cords...>", "Change the padding of alacritty");
+program.option(
+  "-O, --offset <cords...>",
+  "Change offset, X is space between chars and Y is line height of alacritty"
+);
+program.option(
+  "-l, --list <fonts, themes, all>",
+  'List all available options from resource, default is "all"'
+);
+program.option(
+  "-P, --print <config, fonts>",
+  "Print the content of config files or themes by specifying their name of alacritty"
+);
 
 const {
   theme,
@@ -33,21 +36,18 @@ const {
   print,
 } = program.parse(process.argv);
 
-// console.log(program.opts());
-// console.log(program.args);
-
 const flags = {
   theme,
   font,
   size,
   opacity,
   padding: {
-    x: padding,
-    y: offset ? undefined : program.args[0],
+    x: padding ? Number(padding[0]) : undefined,
+    y: padding ? Number(padding[1]) : undefined,
   },
   offset: {
-    x: offset,
-    y: padding ? undefined : program.args[0],
+    x: offset ? Number(offset[0]) : undefined,
+    y: offset ? Number(offset[1]) : undefined,
   },
   list: list,
   print: print,
