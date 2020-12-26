@@ -12,7 +12,6 @@ git clone https://github.com/CodingLeonardo/jscritty
 cd jscritty
 npm install
 cd ..
-npm install
 # Create themes and fonts configs
 cp jscritty/config/fonts.yaml fonts.yaml
 cp -r jscritty/config/themes themes
