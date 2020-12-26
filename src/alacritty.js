@@ -40,7 +40,7 @@ class Alacritty {
     this.configFile = `${this.basePath}/alacritty.yml`;
     if (!fs.existsSync(this.configFile)) {
       log(warning("Config file not found"));
-      fs.writeFileSync(this.configFile);
+      fs.openSync(this.configFile, "a");
       log("Created config file =>");
       log(chalk.blue(this.configFile));
     }
