@@ -78,8 +78,6 @@ if (flags.print === undefined) {
   delete flags.print;
 }
 
-console.log(flags);
-
 module.exports = {
   args: flags,
 };
