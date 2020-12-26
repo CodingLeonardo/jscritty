@@ -1,4 +1,7 @@
 const { Command } = require("commander");
+const chalk = require("chalk");
+const error = chalk.bold.red;
+const warning = chalk.keyword("orange");
 const program = new Command();
 
 program.version("0.0.1");

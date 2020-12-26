@@ -35,6 +35,7 @@ class Alacritty {
     this.basePath = path.resolve(process.env.HOME, ".config/alacritty");
     if (!fs.existsSync(this.basePath)) {
       log(error(`Config directory not found: ${this.base_path}`));
+      process.exit();
     }
     this.configFile = `${this.basePath}/alacritty.yml`;
     if (!fs.existsSync(this.configFile)) {
@@ -81,12 +82,14 @@ class Alacritty {
       );
     } catch (err) {
       log(error(err));
+      process.exit();
     }
   }
 
   resourcePath(resource) {
     if (!(resource in this.resources)) {
       log(error(`Path for resource "${resource}" not set`));
+      process.exit();
     }
 
     resource = this.resources[resource];
@@ -108,6 +111,7 @@ class Alacritty {
   apply(config) {
     if (config === null || config.length < 1) {
       log(error("No options provided"));
+      process.exit();
     }
 
     const actions = {
@@ -129,12 +133,14 @@ class Alacritty {
         } catch (err) {
           log(error(err));
           errorsFound += 1;
+          process.exit();
         }
       }
     }
 
     if (errorsFound > 0) {
       log(error(`\n${errorsFound} error(s) found`));
+      process.exit();
     }
   }
 
@@ -143,13 +149,16 @@ class Alacritty {
     const themeFile = `${themesDirectory}/${theme}.yaml`;
     if (!fs.existsSync(themeFile)) {
       log(error(`Theme "${theme}" not found`));
+      process.exit();
     }
     const themeYaml = this.load(themeFile);
     if (themeYaml === null) {
       log(error(`File ${themeFile.name} is empty`));
+      process.exit();
     }
     if (!themeYaml["colors"]) {
       log(error(`${themeFile} does not contain color config`));
+      process.exit();
     }
 
     const expected_colors = [
@@ -187,6 +196,7 @@ class Alacritty {
     size = Number(size);
     if (size <= 0) {
       log(error("Font size cannot be negative or zero"));
+      process.exit();
     }
 
     if (!("font" in this.config)) {
@@ -203,6 +213,7 @@ class Alacritty {
     opacity = Number(opacity);
     if (opacity < 0.0 || opacity > 1.0) {
       log(error("Opacity should be between 0.0 and 1.0"));
+      process.exit();
     }
 
     this.config["background_opacity"] = opacity;
@@ -219,15 +230,18 @@ class Alacritty {
     let fonts = this.load(fontsFile);
     if (fonts === null) {
       log(error(`File "${fontsFile}" is empty`));
+      process.exit();
     }
     if (!("fonts" in fonts)) {
       log(error(`No font config found in "${fontsFile}"`));
+      process.exit();
     }
 
     fonts = fonts["fonts"];
 
     if (!(font in fonts)) {
       log(error(`Config for font "${font}" not found`));
+      process.exit();
     }
 
     const fontTypes = ["normal", "bold", "italic"];
@@ -242,11 +256,12 @@ class Alacritty {
 
     if (!(fonts[font] instanceof Object)) {
       log(error(`Font "${font}" has wrong format`));
+      process.exit();
     }
 
     for (let t in fontTypes) {
       if (!(t in Object.keys(fonts))) {
-        log(warning(`Font "${font}" does not have "${t}" property`));
+        log(error(`Font "${font}" does not have "${t}" property`));
       }
       if (!(t in this.config["font"])) {
         this.config["font"][fontTypes[t]] = { family: "tmp" };
@@ -260,6 +275,17 @@ class Alacritty {
     if (Object.keys(padding).length != 2) {
       log(error("Padding should only have an x and y value"));
     }
+
+    if (!padding.x || !padding.y) {
+      log(error('Missing "Y" value of padding'));
+      process.exit();
+    }
+
+    if (Math.sign(padding.x) === -1 || Math.sign(padding.y) === -1) {
+      log(error('The "X" or "Y" values of padding cannot be negative'));
+      process.exit();
+    }
+
     const { x, y } = padding;
     if (!("window" in this.config)) {
       this.config["window"] = {};
@@ -277,8 +303,19 @@ class Alacritty {
 
   changeFontOffset(offset) {
     if (Object.keys(offset).length != 2) {
-      log(error("Wrong offset config, should be [x, y]"));
+      log(error("Offset should only have an x and y value"));
     }
+
+    if (!offset.x || !offset.y) {
+      log(error('Missing "Y" value of offset'));
+      process.exit();
+    }
+
+    if (Math.sign(offset.x) === -1 || Math.sign(offset.y) === -1) {
+      log(error('The "X" or "Y" values of offset cannot be negative'));
+      process.exit();
+    }
+
     const { x, y } = offset;
     if (!("font" in this.config)) {
       this.config["font"] = {};
@@ -305,6 +342,7 @@ class Alacritty {
     } else {
       if (!(toBeListed in options)) {
         log(error(`Cannot list ${toBeListed}, unknown option`));
+        process.exit();
       }
       options[toBeListed]();
     }
@@ -362,7 +400,8 @@ class Alacritty {
     const themeFile = `${themesDir}/${theme}.yaml`;
 
     if (!fs.existsSync(themeFile)) {
-      log(error(`Failed printing "${theme}" theme, "${theme_file}" not found`));
+      log(error(`Failed printing "${theme}" theme, "${themeFile}" not found`));
+      process.exit();
     }
     log(chalk.blue(themeFile));
     log(yaml.stringify(this.load(themeFile)));
@@ -378,12 +417,10 @@ class Alacritty {
       toBePrinted.append("config");
     }
 
-    for (let param in toBePrinted) {
-      if (param in options) {
-        this.printTheme(param);
-      } else {
-        options[toBePrinted]();
-      }
+    if (toBePrinted in options) {
+      options[toBePrinted]();
+    } else {
+      this.printTheme(toBePrinted);
     }
   }
 }
