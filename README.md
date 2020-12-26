@@ -9,9 +9,13 @@ Change your alacritty config on the fly!
 mkdir -p ~/.config/alacritty
 cd ~/.config/alacritty
 git clone https://github.com/CodingLeonardo/jscritty
+<<<<<<< HEAD
 cd jscritty
 npm install
 cd ..
+=======
+npm install
+>>>>>>> fd83b3c166a0b20668f09f410dbc7be21f7d9395
 # Create themes and fonts configs
 cp jscritty/config/fonts.yaml fonts.yaml
 cp -r jscritty/config/themes themes
