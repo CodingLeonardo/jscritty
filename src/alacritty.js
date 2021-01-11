@@ -53,22 +53,14 @@ class Alacritty {
       themes: {
         type: "Themes directory",
         path: `${this.basePath}/themes`,
-        exists: () => {
-          fs.existsSync(this.resources["themes"]["path"]);
-        },
-        create: () => {
-          fs.mkdirSync(this.resources["themes"]["path"]);
-        },
+        exists: () => fs.existsSync(this.resources["themes"]["path"]),
+        create: () => fs.mkdirSync(this.resources["themes"]["path"]),
       },
       fonts: {
         type: "Fonts file",
         path: `${this.basePath}/fonts.yaml`,
-        exists: () => {
-          fs.existsSync(this.resources["fonts"]["path"]);
-        },
-        create: () => {
-          fs.writeFileSync(this.resources["fonts"]["path"]);
-        },
+        exists: () => fs.existsSync(this.resources["fonts"]["path"]),
+        create: () => fs.writeFileSync(this.resources["fonts"]["path"]),
       },
     };
   }
@@ -93,7 +85,7 @@ class Alacritty {
     }
 
     resource = this.resources[resource];
-    if (!resource["exists"]) {
+    if (!resource["exists"]()) {
       log(warning(`${resource["type"]} not found`));
       resource["create"]();
       log("Created resource =>");
@@ -254,25 +246,29 @@ class Alacritty {
       }
     }
 
-    if (!(fonts[font] instanceof Object)) {
+    if (!(typeof fonts[font] === "object")) {
       log(error(`Font "${font}" has wrong format`));
       process.exit();
     }
 
     for (let t in fontTypes) {
-      if (!(t in Object.keys(fonts))) {
-        log(error(`Font "${font}" does not have "${t}" property`));
+      if (!(fontTypes[t] in fonts[font])) {
+        log(error(`Font "${font}" does not have "${fontTypes[t]}" property`));
       }
-      if (!(t in this.config["font"])) {
+
+      if (!(fontTypes[t] in this.config["font"])) {
         this.config["font"][fontTypes[t]] = { family: "tmp" };
       }
-      this.config["font"][fontTypes[t]]["family"] = fonts[font][fontTypes[t]];
+
+      this.config["font"][fontTypes[t]]["family"] = fonts[font][fontTypes[t]]
+        ? fonts[font][fontTypes[t]]
+        : "tmp";
     }
     log(chalk.blue(`Font ${font} applied`));
   }
 
   changePadding(padding) {
-    if (Object.keys(padding).length != 2) {
+    if (Object.keys(padding).length !== 2) {
       log(error("Padding should only have an x and y value"));
     }
 
@@ -377,7 +373,8 @@ class Alacritty {
         } else {
           log(chalk.green.bold.underline("Themes"));
           for (let theme in themes) {
-            log(chalk.green(`${themes[theme]}`));
+            const themeName = themes[theme].replace(".yaml", "");
+            log(chalk.green(`${themeName}`));
           }
         }
       }
