@@ -263,6 +263,10 @@ class Alacritty {
       this.config["font"][fontTypes[t]]["family"] = fonts[font][fontTypes[t]]
         ? fonts[font][fontTypes[t]]
         : "tmp";
+      const capitalize = ([firstLetter, ...restOfWord]) =>
+        firstLetter.toUpperCase() + restOfWord.join("");
+      const fontType = fontTypes[t] === "normal" ? "regular" : fontTypes[t];
+      this.config["font"][fontTypes[t]]["style"] = capitalize(fontType);
     }
     log(chalk.blue(`Font ${font} applied`));
   }
