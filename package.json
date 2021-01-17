@@ -1,6 +1,6 @@
 {
   "name": "jscritty",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "CLI that allows you to change your Alacritty config with one command without editting the config file.",
   "main": "src/index.js",
   "bin": "bin/outside",
