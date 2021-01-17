@@ -2,6 +2,12 @@
 
 Change your alacritty config on the fly!
 
+### Installation
+
+```bash
+  npm install jscritty -g
+```
+
 ### Manual Installation
 
 ```bash

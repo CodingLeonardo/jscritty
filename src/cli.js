@@ -1,9 +1,8 @@
 const { Command } = require("commander");
-const chalk = require("chalk");
 const program = new Command();
 
-program.version("0.0.1");
-program.name("JSCritty");
+program.version("1.0.0");
+program.name("jscritty");
 program.description(
   "CLI that allows you to change your Alacritty config with one command without editting the config file."
 );

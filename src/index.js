@@ -1,5 +1,7 @@
-const Alacritty = require("./src/alacritty.js");
-const { args } = require("./src/cli.js");
+#!/usr/bin/env node
+
+const Alacritty = require("./alacritty.js");
+const { args } = require("./cli.js");
 
 module.exports = () => {
   const alacritty = new Alacritty();

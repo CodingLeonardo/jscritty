@@ -2,18 +2,25 @@
   "name": "jscritty",
   "version": "1.0.0",
   "description": "CLI that allows you to change your Alacritty config with one command without editting the config file.",
-  "main": "index.js",
-  "bin": {
-    "outside": "bin/outside"
-  },
+  "main": "src/index.js",
+  "bin": "bin/outside",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "babel src --out-dir dist --presets=@babel/preset-env",
+    "prepare": "npm run build"
   },
   "author": "@CodingLeonardo <Leonardo Rivero>",
   "license": "MIT",
+  "repository": {
+    "url": "https://github.com/CodingLeonardo/jscritty"
+  },
   "dependencies": {
     "chalk": "^4.1.0",
     "commander": "^6.2.1",
     "yaml": "^1.10.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.12.10",
+    "@babel/core": "^7.12.10",
+    "@babel/preset-env": "^7.12.11"
   }
 }
