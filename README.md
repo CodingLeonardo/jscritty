@@ -2,6 +2,7 @@
 
 Change your alacritty config on the fly!
 
+**✨ This project is a fork of [pycritty](https://github.com/antoniosarosi/pycritty) ✨**
 ### Installation
 
 ```bash
