@@ -1,7 +1,9 @@
-const { Command } = require("commander");
+import { Command } from "commander"
+import { getVersion } from "./getVersion"
 const program = new Command();
+const version = getVersion()
 
-program.version("1.0.0");
+program.version(version);
 program.name("jscritty");
 program.description(
   "CLI that allows you to change your Alacritty config with one command without editting the config file."
@@ -78,6 +80,6 @@ if (flags.print === undefined) {
   delete flags.print;
 }
 
-module.exports = {
-  args: flags,
-};
+export const args = {
+  ...flags
+}
