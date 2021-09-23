@@ -1,17 +1,21 @@
-const path = require("path");
-const fs = require("fs");
-const yaml = require("yaml");
-const chalk = require("chalk");
+import * as path from "path"
+import * as fs from "fs"
+import * as yaml from "yaml"
+import * as chalk from "chalk"
+import Config from "./types/config"
+import Resources from "./types/resources"
+import Flags from "./types/flags"
+import Cords from "./types/cords"
 const log = console.log;
 const error = chalk.bold.red;
 const warning = chalk.keyword("orange");
 
 class Alacritty {
+  public basePath: string;
+  public configFile: string;
+  public config: Config;
+  public resources: Resources;
   constructor() {
-    this.basePath = "";
-    this.configFile = "";
-    this.config = {};
-    this.resources = "";
     this.resourcePath = this.resourcePath.bind(this);
     this.load = this.load.bind(this);
     this.changeTheme = this.changeTheme.bind(this);
@@ -34,7 +38,7 @@ class Alacritty {
   init() {
     this.basePath = path.resolve(process.env.HOME, ".config/alacritty");
     if (!fs.existsSync(this.basePath)) {
-      log(error(`Config directory not found: ${this.base_path}`));
+      log(error(`Config directory not found: ${this.basePath}`));
       process.exit();
     }
     this.configFile = `${this.basePath}/alacritty.yml`;
@@ -60,12 +64,12 @@ class Alacritty {
         type: "Fonts file",
         path: `${this.basePath}/fonts.yaml`,
         exists: () => fs.existsSync(this.resources["fonts"]["path"]),
-        create: () => fs.writeFileSync(this.resources["fonts"]["path"]),
+        create: () => fs.writeFileSync(this.resources["fonts"]["path"], "")
       },
     };
   }
 
-  load(yamlFile) {
+  load(yamlFile: string) {
     try {
       return yaml.parse(
         fs.readFileSync(yamlFile, {
@@ -78,7 +82,7 @@ class Alacritty {
     }
   }
 
-  resourcePath(resource) {
+  resourcePath(resource: string) {
     if (!(resource in this.resources)) {
       log(error(`Path for resource "${resource}" not set`));
       process.exit();
@@ -100,8 +104,8 @@ class Alacritty {
     });
   }
 
-  apply(config) {
-    if (config === null || config.length < 1) {
+  apply(flags: Flags) {
+    if (flags === null || Object.keys(flags).length < 1) {
       log(error("No options provided"));
       process.exit();
     }
@@ -119,9 +123,9 @@ class Alacritty {
 
     let errorsFound = 0;
     for (const param in actions) {
-      if (param in config) {
+      if (param in flags) {
         try {
-          actions[param](config[param]);
+          actions[param](flags[param]);
         } catch (err) {
           log(error(err));
           errorsFound += 1;
@@ -136,7 +140,7 @@ class Alacritty {
     }
   }
 
-  changeTheme(theme) {
+  changeTheme(theme: string) {
     const themesDirectory = this.resourcePath("themes");
     const themeFile = `${themesDirectory}/${theme}.yaml`;
     if (!fs.existsSync(themeFile)) {
@@ -145,7 +149,7 @@ class Alacritty {
     }
     const themeYaml = this.load(themeFile);
     if (themeYaml === null) {
-      log(error(`File ${themeFile.name} is empty`));
+      log(error(`File ${theme} is empty`));
       process.exit();
     }
     if (!themeYaml["colors"]) {
@@ -184,7 +188,7 @@ class Alacritty {
     log(chalk.blue(`Theme ${theme} applied`));
   }
 
-  changeFontSize(size) {
+  changeFontSize(size: number) {
     size = Number(size);
     if (size <= 0) {
       log(error("Font size cannot be negative or zero"));
@@ -201,7 +205,7 @@ class Alacritty {
     log(chalk.blue(`Font size set to ${size}`));
   }
 
-  changeOpacity(opacity) {
+  changeOpacity(opacity: number) {
     opacity = Number(opacity);
     if (opacity < 0.0 || opacity > 1.0) {
       log(error("Opacity should be between 0.0 and 1.0"));
@@ -212,7 +216,7 @@ class Alacritty {
     log(chalk.blue(`Opacity set to ${opacity}`));
   }
 
-  changeFont(font) {
+  changeFont(font: string) {
     if (!("font" in this.config)) {
       this.config["font"] = {};
       log(warning('"font" prop was not present in alacritty.yml'));
@@ -263,15 +267,15 @@ class Alacritty {
       this.config["font"][fontTypes[t]]["family"] = fonts[font][fontTypes[t]]
         ? fonts[font][fontTypes[t]]
         : "tmp";
-      const capitalize = ([firstLetter, ...restOfWord]) =>
-        firstLetter.toUpperCase() + restOfWord.join("");
-      const fontType = fontTypes[t] === "normal" ? "regular" : fontTypes[t];
+      const capitalize = (words: string) => words.charAt(0).toUpperCase() + words.slice(1);
+      //  firstLetter.toUpperCase() + restOfWord.join("");
+      const fontType: string = fontTypes[t] === "normal" ? "regular" : fontTypes[t];
       this.config["font"][fontTypes[t]]["style"] = capitalize(fontType);
     }
     log(chalk.blue(`Font ${font} applied`));
   }
 
-  changePadding(padding) {
+  changePadding(padding: Cords) {
     if (Object.keys(padding).length !== 2) {
       log(error("Padding should only have an x and y value"));
     }
@@ -301,7 +305,7 @@ class Alacritty {
     log(chalk.blue(`Padding set to x: ${x}, y: ${y}`));
   }
 
-  changeFontOffset(offset) {
+  changeFontOffset(offset: Cords) {
     if (Object.keys(offset).length != 2) {
       log(error("Offset should only have an x and y value"));
     }
@@ -329,7 +333,7 @@ class Alacritty {
     log(chalk.blue(`Offset set to x: ${x}, y: ${y}`));
   }
 
-  list(toBeListed) {
+  list(toBeListed: string) {
     const options = {
       themes: this.listThemes,
       fonts: this.listFonts,
@@ -396,7 +400,7 @@ class Alacritty {
     log(chalk.green(yaml.stringify(this.load(fontsFile))));
   }
 
-  printTheme(theme) {
+  printTheme(theme: string) {
     const themesDir = this.resourcePath("themes");
     const themeFile = `${themesDir}/${theme}.yaml`;
 
@@ -408,14 +412,14 @@ class Alacritty {
     log(yaml.stringify(this.load(themeFile)));
   }
 
-  print(toBePrinted) {
+  print(toBePrinted: string) {
     const options = {
       fonts: this.printFonts,
       config: this.printConfig,
     };
 
     if (toBePrinted.length == 0) {
-      toBePrinted.append("config");
+      toBePrinted = "config";
     }
 
     if (toBePrinted in options) {
@@ -425,4 +429,5 @@ class Alacritty {
     }
   }
 }
-module.exports = Alacritty;
+
+export default Alacritty
