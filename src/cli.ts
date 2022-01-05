@@ -1,7 +1,7 @@
-import { Command } from "commander"
-import { getVersion } from "./getVersion"
+import { Command } from "commander";
+import { getVersion } from "./getVersion";
 const program = new Command();
-const version = getVersion()
+const version = getVersion();
 
 program.version(version);
 program.name("jscritty");
@@ -27,16 +27,10 @@ program.option(
   "Print the content of config files or themes by specifying their name of alacritty"
 );
 
-const {
-  theme,
-  font,
-  size,
-  opacity,
-  padding,
-  offset,
-  list,
-  print,
-} = program.parse(process.argv);
+program.option("-i, --install <font>", "Install Nerd Font");
+
+const { theme, font, size, opacity, padding, offset, list, print, install } =
+  program.parse(process.argv);
 
 const flags = {
   theme,
@@ -53,6 +47,7 @@ const flags = {
   },
   list: list,
   print: print,
+  install: install,
 };
 
 if (flags.theme === undefined) {
@@ -79,7 +74,10 @@ if (flags.list === undefined) {
 if (flags.print === undefined) {
   delete flags.print;
 }
+if (flags.install === undefined) {
+  delete flags.install;
+}
 
 export const args = {
-  ...flags
-}
+  ...flags,
+};

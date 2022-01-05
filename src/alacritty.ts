@@ -1,14 +1,18 @@
-import * as path from "path"
-import * as fs from "fs"
-import * as yaml from "yaml"
-import * as chalk from "chalk"
-import Config from "./types/config"
-import Resources from "./types/resources"
-import Flags from "./types/flags"
-import Cords from "./types/cords"
+import * as path from "path";
+import * as fs from "fs";
+import * as yaml from "yaml";
+import * as chalk from "chalk";
+import { promisify } from "util";
+import { exec } from "child_process";
+import Config from "./types/config";
+import Resources from "./types/resources";
+import Flags from "./types/flags";
+import Cords from "./types/cords";
+import { stdout } from "process";
 const log = console.log;
 const error = chalk.bold.red;
 const warning = chalk.keyword("orange");
+const execPromisify = promisify(exec);
 
 class Alacritty {
   public basePath: string;
@@ -32,6 +36,7 @@ class Alacritty {
     this.printConfig = this.printConfig.bind(this);
     this.printFonts = this.printFonts.bind(this);
     this.printTheme = this.printTheme.bind(this);
+    this.install = this.install.bind(this);
     this.init();
   }
 
@@ -64,7 +69,7 @@ class Alacritty {
         type: "Fonts file",
         path: `${this.basePath}/fonts.yaml`,
         exists: () => fs.existsSync(this.resources["fonts"]["path"]),
-        create: () => fs.writeFileSync(this.resources["fonts"]["path"], "")
+        create: () => fs.writeFileSync(this.resources["fonts"]["path"], ""),
       },
     };
   }
@@ -119,6 +124,7 @@ class Alacritty {
       offset: this.changeFontOffset,
       list: this.list,
       print: this.print,
+      install: this.install,
     };
 
     let errorsFound = 0;
@@ -267,9 +273,11 @@ class Alacritty {
       this.config["font"][fontTypes[t]]["family"] = fonts[font][fontTypes[t]]
         ? fonts[font][fontTypes[t]]
         : "tmp";
-      const capitalize = (words: string) => words.charAt(0).toUpperCase() + words.slice(1);
+      const capitalize = (words: string) =>
+        words.charAt(0).toUpperCase() + words.slice(1);
       //  firstLetter.toUpperCase() + restOfWord.join("");
-      const fontType: string = fontTypes[t] === "normal" ? "regular" : fontTypes[t];
+      const fontType: string =
+        fontTypes[t] === "normal" ? "regular" : fontTypes[t];
       this.config["font"][fontTypes[t]]["style"] = capitalize(fontType);
     }
     log(chalk.blue(`Font ${font} applied`));
@@ -428,6 +436,44 @@ class Alacritty {
       this.printTheme(toBePrinted);
     }
   }
+
+  install(font: string) {
+    const URL =
+      "https://github.com/ryanoasis/nerd-fonts/releases/download/v2.1.0";
+    log(font);
+
+    exec(
+      `wget${URL}/${font}.zip -P ${process.env.HOME}/.cache/jscritty`,
+      (err, stdout, stderr) => {
+        if (err) {
+          log(err);
+        } else {
+          log(stdout);
+        }
+      }
+    );
+
+    exec(
+      `unzip ${process.env.HOME}/.cache/jscritty/${font}.zip -d ${process.env.HOME}/.local/share/fonts`,
+      (err, stdout, stderr) => {
+        if (err) {
+          log(err);
+        } else {
+          log(stdout);
+        }
+      }
+    );
+
+    exec(`fc-cache -fv`, (err, stdout, stderr) => {
+      if (err) {
+        log(err);
+      } else {
+        log(stdout);
+      }
+    });
+
+    log(chalk.blue(`${font} installed`));
+  }
 }
 
-export default Alacritty
+export default Alacritty;
