@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
-import Alacritty from "./alacritty";
+import Jscritty from "./jscritty";
 import { args } from "./cli";
 
-const alacritty = new Alacritty();
-alacritty.apply(args);
-alacritty.save();
+console.log(args);
 
+const jscritty = new Jscritty();
+jscritty.apply(args);
+jscritty.save();

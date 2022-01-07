@@ -1,20 +1,13 @@
 import * as path from "path";
 import * as fs from "fs";
 import * as yaml from "yaml";
-import * as chalk from "chalk";
-import { promisify } from "util";
-import { exec } from "child_process";
+import * as log from "./utils/log";
 import Config from "./types/config";
 import Resources from "./types/resources";
 import Flags from "./types/flags";
 import Cords from "./types/cords";
-import { stdout } from "process";
-const log = console.log;
-const error = chalk.bold.red;
-const warning = chalk.keyword("orange");
-const execPromisify = promisify(exec);
 
-class Alacritty {
+class Jscritty {
   public basePath: string;
   public configFile: string;
   public config: Config;
@@ -36,27 +29,26 @@ class Alacritty {
     this.printConfig = this.printConfig.bind(this);
     this.printFonts = this.printFonts.bind(this);
     this.printTheme = this.printTheme.bind(this);
-    this.install = this.install.bind(this);
     this.init();
   }
 
   init() {
     this.basePath = path.resolve(process.env.HOME, ".config/alacritty");
     if (!fs.existsSync(this.basePath)) {
-      log(error(`Config directory not found: ${this.basePath}`));
+      log.err(`Config directory not found: ${this.basePath}`);
       process.exit();
     }
     this.configFile = `${this.basePath}/alacritty.yml`;
     if (!fs.existsSync(this.configFile)) {
-      log(warning("Config file not found"));
+      log.warn("Config file not found");
       fs.openSync(this.configFile, "a");
-      log("Created config file =>");
-      log(chalk.blue(this.configFile));
+      log.normal("Created config file =>");
+      log.ok(this.configFile);
     }
     this.config = this.load(this.configFile);
     if (this.config === null) {
       this.config = {};
-      log(warning("Alacritty config file was empty"));
+      log.warn("Alacritty config file was empty");
     }
     this.resources = {
       themes: {
@@ -82,23 +74,23 @@ class Alacritty {
         })
       );
     } catch (err) {
-      log(error(err));
+      log.err(err);
       process.exit();
     }
   }
 
   resourcePath(resource: string) {
     if (!(resource in this.resources)) {
-      log(error(`Path for resource "${resource}" not set`));
+      log.err(`Path for resource "${resource}" not set`);
       process.exit();
     }
 
     resource = this.resources[resource];
     if (!resource["exists"]()) {
-      log(warning(`${resource["type"]} not found`));
+      log.warn(`${resource["type"]} not found`);
       resource["create"]();
-      log("Created resource =>");
-      log(chalk.blue(resource["path"]));
+      log.normal("Created resource =>");
+      log.ok(resource["path"]);
     }
     return resource["path"];
   }
@@ -111,7 +103,7 @@ class Alacritty {
 
   apply(flags: Flags) {
     if (flags === null || Object.keys(flags).length < 1) {
-      log(error("No options provided"));
+      log.err("No options provided");
       process.exit();
     }
 
@@ -124,7 +116,6 @@ class Alacritty {
       offset: this.changeFontOffset,
       list: this.list,
       print: this.print,
-      install: this.install,
     };
 
     let errorsFound = 0;
@@ -133,7 +124,7 @@ class Alacritty {
         try {
           actions[param](flags[param]);
         } catch (err) {
-          log(error(err));
+          log.err(err);
           errorsFound += 1;
           process.exit();
         }
@@ -141,7 +132,7 @@ class Alacritty {
     }
 
     if (errorsFound > 0) {
-      log(error(`\n${errorsFound} error(s) found`));
+      log.err(`\n${errorsFound} error(s) found`);
       process.exit();
     }
   }
@@ -150,16 +141,16 @@ class Alacritty {
     const themesDirectory = this.resourcePath("themes");
     const themeFile = `${themesDirectory}/${theme}.yaml`;
     if (!fs.existsSync(themeFile)) {
-      log(error(`Theme "${theme}" not found`));
+      log.err(`Theme "${theme}" not found`);
       process.exit();
     }
     const themeYaml = this.load(themeFile);
     if (themeYaml === null) {
-      log(error(`File ${theme} is empty`));
+      log.err(`File ${theme} is empty`);
       process.exit();
     }
     if (!themeYaml["colors"]) {
-      log(error(`${themeFile} does not contain color config`));
+      log.err(`${themeFile} does not contain color config`);
       process.exit();
     }
 
@@ -181,68 +172,68 @@ class Alacritty {
 
     for (let k in expected_props) {
       if (!(k in themeYaml["colors"])) {
-        log(warning(`Missing "colors:${k}" for theme "${theme}"`));
+        log.warn(`Missing "colors:${k}" for theme "${theme}"`);
         continue;
       }
       for (let v in expected_props[k]) {
         if (!(v in Object.keys(themeYaml["colors"][k]))) {
-          log(warning(`Missing "colors:${k}:${v}" for theme "${theme}"`));
+          log.warn(`Missing "colors:${k}:${v}" for theme "${theme}"`);
         }
       }
     }
     this.config["colors"] = themeYaml["colors"];
-    log(chalk.blue(`Theme ${theme} applied`));
+    log.warn(`Theme ${theme} applied`);
   }
 
   changeFontSize(size: number) {
     size = Number(size);
     if (size <= 0) {
-      log(error("Font size cannot be negative or zero"));
+      log.err("Font size cannot be negative or zero");
       process.exit();
     }
 
     if (!("font" in this.config)) {
       this.config["font"] = {};
-      log(warning('"font" prop config was not present in alacritty.yml'));
+      log.warn('"font" prop config was not present in alacritty.yml');
       this.config["font"]["size"] = size;
     }
 
     this.config["font"]["size"] = size;
-    log(chalk.blue(`Font size set to ${size}`));
+    log.ok(`Font size set to ${size}`);
   }
 
   changeOpacity(opacity: number) {
     opacity = Number(opacity);
     if (opacity < 0.0 || opacity > 1.0) {
-      log(error("Opacity should be between 0.0 and 1.0"));
+      log.err("Opacity should be between 0.0 and 1.0");
       process.exit();
     }
 
     this.config["background_opacity"] = opacity;
-    log(chalk.blue(`Opacity set to ${opacity}`));
+    log.ok(`Opacity set to ${opacity}`);
   }
 
   changeFont(font: string) {
     if (!("font" in this.config)) {
       this.config["font"] = {};
-      log(warning('"font" prop was not present in alacritty.yml'));
+      log.warn('"font" prop was not present in alacritty.yml');
     }
 
     const fontsFile = this.resourcePath("fonts");
     let fonts = this.load(fontsFile);
     if (fonts === null) {
-      log(error(`File "${fontsFile}" is empty`));
+      log.err(`File "${fontsFile}" is empty`);
       process.exit();
     }
     if (!("fonts" in fonts)) {
-      log(error(`No font config found in "${fontsFile}"`));
+      log.err(`No font config found in "${fontsFile}"`);
       process.exit();
     }
 
     fonts = fonts["fonts"];
 
     if (!(font in fonts)) {
-      log(error(`Config for font "${font}" not found`));
+      log.err(`Config for font "${font}" not found`);
       process.exit();
     }
 
@@ -257,13 +248,13 @@ class Alacritty {
     }
 
     if (!(typeof fonts[font] === "object")) {
-      log(error(`Font "${font}" has wrong format`));
+      log.err(`Font "${font}" has wrong format`);
       process.exit();
     }
 
     for (let t in fontTypes) {
       if (!(fontTypes[t] in fonts[font])) {
-        log(error(`Font "${font}" does not have "${fontTypes[t]}" property`));
+        log.err(`Font "${font}" does not have "${fontTypes[t]}" property`);
       }
 
       if (!(fontTypes[t] in this.config["font"])) {
@@ -275,56 +266,55 @@ class Alacritty {
         : "tmp";
       const capitalize = (words: string) =>
         words.charAt(0).toUpperCase() + words.slice(1);
-      //  firstLetter.toUpperCase() + restOfWord.join("");
       const fontType: string =
         fontTypes[t] === "normal" ? "regular" : fontTypes[t];
       this.config["font"][fontTypes[t]]["style"] = capitalize(fontType);
     }
-    log(chalk.blue(`Font ${font} applied`));
+    log.ok(`Font ${font} applied`);
   }
 
   changePadding(padding: Cords) {
     if (Object.keys(padding).length !== 2) {
-      log(error("Padding should only have an x and y value"));
+      log.err("Padding should only have an x and y value");
     }
 
     if (!padding.x || !padding.y) {
-      log(error('Missing "Y" value of padding'));
+      log.err('Missing "Y" value of padding');
       process.exit();
     }
 
     if (Math.sign(padding.x) === -1 || Math.sign(padding.y) === -1) {
-      log(error('The "X" or "Y" values of padding cannot be negative'));
+      log.err('The "X" or "Y" values of padding cannot be negative');
       process.exit();
     }
 
     const { x, y } = padding;
     if (!("window" in this.config)) {
       this.config["window"] = {};
-      log(warning('"window" prop was not present in config file'));
+      log.warn('"window" prop was not present in config file');
     }
     if (!("padding" in this.config["window"])) {
       this.config["window"]["padding"] = {};
-      log(warning('"padding" prop was not present in config file'));
+      log.warn('"padding" prop was not present in config file');
     }
 
     this.config["window"]["padding"]["x"] = Number(x);
     this.config["window"]["padding"]["y"] = Number(y);
-    log(chalk.blue(`Padding set to x: ${x}, y: ${y}`));
+    log.ok(`Padding set to x: ${x}, y: ${y}`);
   }
 
   changeFontOffset(offset: Cords) {
     if (Object.keys(offset).length != 2) {
-      log(error("Offset should only have an x and y value"));
+      log.err("Offset should only have an x and y value");
     }
 
     if (!offset.x || !offset.y) {
-      log(error('Missing "Y" value of offset'));
+      log.err('Missing "Y" value of offset');
       process.exit();
     }
 
     if (Math.sign(offset.x) === -1 || Math.sign(offset.y) === -1) {
-      log(error('The "X" or "Y" values of offset cannot be negative'));
+      log.err('The "X" or "Y" values of offset cannot be negative');
       process.exit();
     }
 
@@ -333,12 +323,12 @@ class Alacritty {
       this.config["font"] = {};
     }
     if (!("offset" in this.config["font"])) {
-      log(warning('"offset" prop was not set'));
+      log.warn('"offset" prop was not set');
       this.config["font"]["offset"] = {};
     }
     this.config["font"]["offset"]["x"] = Number(x);
     this.config["font"]["offset"]["y"] = Number(y);
-    log(chalk.blue(`Offset set to x: ${x}, y: ${y}`));
+    log.ok(`Offset set to x: ${x}, y: ${y}`);
   }
 
   list(toBeListed: string) {
@@ -353,7 +343,7 @@ class Alacritty {
       }
     } else {
       if (!(toBeListed in options)) {
-        log(error(`Cannot list ${toBeListed}, unknown option`));
+        log.err(`Cannot list ${toBeListed}, unknown option`);
         process.exit();
       }
       options[toBeListed]();
@@ -363,11 +353,11 @@ class Alacritty {
   listFonts() {
     const fonts = this.load(this.resourcePath("fonts"));
     if (fonts === null || !("fonts" in fonts)) {
-      log(warning("Cannot list fonts, no fonts found"));
+      log.warn("Cannot list fonts, no fonts found");
     } else {
-      log(chalk.blue.bold.underline("Fonts:"));
+      log.ok("Fonts:", { underline: true, bold: true });
       for (let font in fonts["fonts"]) {
-        log(chalk.blue(`${font}`));
+        log.ok(`${font}`);
       }
     }
   }
@@ -376,7 +366,7 @@ class Alacritty {
     const themesDir = this.resourcePath("themes");
     fs.readdir(themesDir, (err, files) => {
       if (err) {
-        log(error(err));
+        log.err(String(err));
       } else {
         const themes = [];
 
@@ -385,12 +375,12 @@ class Alacritty {
         });
 
         if (themes.length < 1) {
-          log(warning("Cannot list themes, themes directory is empty"));
+          log.warn("Cannot list themes, themes directory is empty");
         } else {
-          log(chalk.green.bold.underline("Themes"));
+          log.primary("Themes:", { underline: true, bold: true });
           for (let theme in themes) {
             const themeName = themes[theme].replace(".yaml", "");
-            log(chalk.green(`${themeName}`));
+            log.primary(`${themeName}`);
           }
         }
       }
@@ -398,14 +388,14 @@ class Alacritty {
   }
 
   printConfig() {
-    log(chalk.blue(this.configFile));
-    log(yaml.stringify(this.config));
+    log.normal(this.configFile);
+    log.normal(yaml.stringify(this.config));
   }
 
   printFonts() {
     const fontsFile = this.resourcePath("fonts");
-    log(chalk.blue(fontsFile));
-    log(chalk.green(yaml.stringify(this.load(fontsFile))));
+    log.ok(fontsFile);
+    log.primary(yaml.stringify(this.load(fontsFile)));
   }
 
   printTheme(theme: string) {
@@ -413,11 +403,11 @@ class Alacritty {
     const themeFile = `${themesDir}/${theme}.yaml`;
 
     if (!fs.existsSync(themeFile)) {
-      log(error(`Failed printing "${theme}" theme, "${themeFile}" not found`));
+      log.err(`Failed printing "${theme}" theme, "${themeFile}" not found`);
       process.exit();
     }
-    log(chalk.blue(themeFile));
-    log(yaml.stringify(this.load(themeFile)));
+    log.ok(themeFile);
+    log.normal(yaml.stringify(this.load(themeFile)));
   }
 
   print(toBePrinted: string) {
@@ -436,44 +426,6 @@ class Alacritty {
       this.printTheme(toBePrinted);
     }
   }
-
-  install(font: string) {
-    const URL =
-      "https://github.com/ryanoasis/nerd-fonts/releases/download/v2.1.0";
-    log(font);
-
-    exec(
-      `wget${URL}/${font}.zip -P ${process.env.HOME}/.cache/jscritty`,
-      (err, stdout, stderr) => {
-        if (err) {
-          log(err);
-        } else {
-          log(stdout);
-        }
-      }
-    );
-
-    exec(
-      `unzip ${process.env.HOME}/.cache/jscritty/${font}.zip -d ${process.env.HOME}/.local/share/fonts`,
-      (err, stdout, stderr) => {
-        if (err) {
-          log(err);
-        } else {
-          log(stdout);
-        }
-      }
-    );
-
-    exec(`fc-cache -fv`, (err, stdout, stderr) => {
-      if (err) {
-        log(err);
-      } else {
-        log(stdout);
-      }
-    });
-
-    log(chalk.blue(`${font} installed`));
-  }
 }
 
-export default Alacritty;
+export default Jscritty;

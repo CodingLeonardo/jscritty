@@ -14,11 +14,13 @@
     "url": "https://github.com/CodingLeonardo/jscritty"
   },
   "dependencies": {
+    "argparse": "^2.0.1",
     "chalk": "^4.1.0",
     "commander": "^6.2.1",
     "yaml": "^1.10.0"
   },
   "devDependencies": {
+    "@types/argparse": "^2.0.10",
     "@types/chalk": "^2.2.0",
     "@types/node": "^16.9.6",
     "ts-node": "^10.2.1",
